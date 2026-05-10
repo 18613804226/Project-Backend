@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/client"
+  // output   = "../src/generated/client"
 }
 
 datasource db {
@@ -18,7 +18,7 @@ model User {
   avatar            String?
   createdAt         DateTime           @default(now())
   name              String?
-  status            String             @default("ACTIVE") // 添加状态字段
+  status            String             @default("ACTIVE")
   courses           Course[]
   certificates      Certificate[]
   visitLogs         VisitLog[]
@@ -32,12 +32,12 @@ model User {
 
 model Course {
   id            Int            @id @default(autoincrement())
-  title         String         @unique // 👈 改为 title
+  title         String         @unique
   description   String?
   cover         String?
   teacherId     Int?
   createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt // 建议加上
+  updatedAt     DateTime       @updatedAt
   teacher       User?          @relation(fields: [teacherId], references: [id])
   category      String?
   certificates  Certificate[]
@@ -54,11 +54,11 @@ model PublishedExam {
   createdAt   DateTime       @default(now())
   createdBy   String
   status      String         @default("active")
-  isCurrent   Boolean        @default(false) // ✅ mark current exam
+  isCurrent   Boolean        @default(false) //  mark current exam
   templateId  Int?
   template    ExamTemplate?  @relation(fields: [templateId], references: [id])
   questions   ExamQuestion[]
-  duration    Int            @default(0) // ✅ 冗余存储考试时长
+  duration    Int            @default(0)
   examResults ExamResult[]
 
   @@index([isCurrent]) // ✅ faster lookup for current exam
@@ -77,8 +77,8 @@ model ExamQuestion {
   score           Int            @default(10)
   publishedExamId Int?
   publishedExam   PublishedExam? @relation(fields: [publishedExamId], references: [id])
-  isCurrentExam   Boolean        @default(false) // ✅ 加这一行
-  optionsHash     String? // ✅ 添加这一行
+  isCurrentExam   Boolean        @default(false)
+  optionsHash     String?
 
   @@index([publishedExamId])
 }
@@ -91,7 +91,7 @@ model ExamTemplate {
   courseId     Int?
   exams        PublishedExam[] // optional back-reference
   course       Course?         @relation(fields: [courseId], references: [id])
-  passingScore Int?            @default(60) // ✅ 新增字段
+  passingScore Int?            @default(60)
 }
 
 model ExamSection {
@@ -105,10 +105,10 @@ model ExamSection {
 
 model Certificate {
   id         Int      @id @default(autoincrement())
-  name       String? // 证书名称
-  username   String // 学员姓名
+  name       String?
+  username   String
   courseId   Int?
-  courseName String? // 课程名
+  courseName String?
   issuedAt   DateTime @default(now())
   status     String?  @default("ACTIVE") // ACTIVE, EXPIRED
   userId     Int?
@@ -122,13 +122,13 @@ model Certificate {
 
 model VisitLog {
   id         Int      @id @default(autoincrement())
-  userId     Int? // 可关联已登录用户
+  userId     Int?
   ip         String?
   userAgent  String?
   path       String // 如 /api/courses, /dashboard
   method     String // GET, POST...
   statusCode Int // 200, 404...
-  duration   Int? // 响应耗时（毫秒）
+  duration   Int?
   createdAt  DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id])
@@ -142,10 +142,10 @@ model StudyLog {
   id        Int      @id @default(autoincrement())
   userId    Int
   courseId  Int?
-  lessonId  Int? // 如果有 lesson 模型
+  lessonId  Int?
   action    String // "watch_video", "complete_lesson", "start_exam", "download_resource"
-  metadata  Json? // 额外信息 { videoId: 123, progress: 80 }
-  duration  Int? // 学习时长（秒）
+  metadata  Json? //{ videoId: 123, progress: 80 }
+  duration  Int?
   createdAt DateTime @default(now())
 
   user   User    @relation(fields: [userId], references: [id])
@@ -158,7 +158,7 @@ model StudyLog {
 model ResourceDownload {
   id           Int      @id @default(autoincrement())
   userId       Int
-  resourceId   Int // 可指向课程资料、附件等
+  resourceId   Int
   resourceType String // "course_material", "certificate_pdf", "exam_template"
   fileName     String?
   createdAt    DateTime @default(now())
@@ -176,7 +176,7 @@ model PageView {
   id       Int      @id @default(autoincrement())
   ip       String?
   userId   Int?
-  path     String // 页面路径，如 "/"
+  path     String
   viewedAt DateTime @default(now())
 
   @@index([viewedAt])
@@ -200,8 +200,8 @@ model ActivityLog {
   id         Int      @id @default(autoincrement())
   userId     Int
   actionType String
-  targetId   Int? // 可为空
-  targetType String? // 可为空
+  targetId   Int?
+  targetType String?
   content    String
   isPublic   Boolean  @default(true)
   createdAt  DateTime @default(now())
@@ -209,44 +209,39 @@ model ActivityLog {
   user User @relation(fields: [userId], references: [id])
 }
 
-// 课时表：课程的基本教学单元
 model Lesson {
   id          Int      @id @default(autoincrement())
-  title       String // 课时标题，如 "HTML 基础语法"
-  description String? // 可选描述
-  courseId    Int // 所属课程
-  moduleId    Int? // 如果未来支持模块/章节，可扩展
-  order       Int      @default(0) // 排序字段，控制课时顺序
+  title       String
+  description String?
+  courseId    Int
+  moduleId    Int?
+  order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   type        String   @default("text")
-  content     Json?    @default("[]") // 👈 默认空数组// 富文本内容
-  videoUrl    String? // 视频地址
+  content     Json?    @default("[]")
+  videoUrl    String?
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  // module Module? @relation(fields: [moduleId], references: [id]) // 未来可启用
+  // module Module? @relation(fields: [moduleId], references: [id]) 
 
-  // 关联学习进度记录
   progresses LessonProgress[]
 
   @@index([courseId])
-  // ✅ 添加复合索引（关键！）
   @@index([courseId, order], name: "Lesson_courseId_order_idx")
 }
 
-// 学习进度表：记录每个用户对每节课的完成状态
 model LessonProgress {
   id          Int       @id @default(autoincrement())
   userId      Int
   lessonId    Int
   completed   Boolean   @default(false)
-  completedAt DateTime? // 首次完成时间（可为空）
+  completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
-  // ⭐ 核心约束：一个用户对一节课只能有一条进度记录
   @@unique([userId, lessonId])
   @@index([userId])
   @@index([lessonId])
