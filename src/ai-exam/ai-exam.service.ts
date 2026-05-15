@@ -559,7 +559,9 @@ export class AiService {
     });
 
     if (!exam) {
-      throw new BadRequestException('当前无有效试卷，请联系管理员');
+      throw new BadRequestException(
+        'There are currently no valid test papers available. Please contact the administrator.',
+      );
     }
     return {
       examId: exam.id,
