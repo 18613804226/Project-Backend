@@ -6,7 +6,7 @@ WORKDIR /app
 RUN npm config set registry https://registry.npmmirror.com \
     && npm install -g pnpm
 
-# 顺便给 pnpm 也配置一下国内镜像源
+# 给编译阶段的 pnpm 也配置国内镜像源
 RUN pnpm config set registry https://registry.npmmirror.com
 
 # 复制依赖配置文件
@@ -22,9 +22,12 @@ RUN pnpm run build
 FROM dockerproxy.net/library/node:20-alpine
 WORKDIR /app
 
-# 【关键修复】在第二阶段同样先换国内镜像源，再安装 pnpm
+# 在第二阶段同样先换 npm 镜像源，并安装 pnpm
 RUN npm config set registry https://registry.npmmirror.com \
     && npm install -g pnpm
+
+# 【关键修复】给运行阶段的 pnpm 也配置国内镜像源，解决下载依赖慢/超时的问题
+RUN pnpm config set registry https://registry.npmmirror.com
 
 COPY package.json pnpm-lock.yaml* ./
 # 仅安装生产环境依赖
