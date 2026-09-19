@@ -2,8 +2,8 @@
 FROM dockerproxy.net/library/node:20-alpine AS builder
 WORKDIR /app
 
-# 安装 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# 直接通过 npm 全局安装稳定版的 pnpm
+RUN npm install -g pnpm
 
 # 复制依赖配置文件
 COPY package.json pnpm-lock.yaml* ./
@@ -18,7 +18,7 @@ RUN pnpm run build
 FROM dockerproxy.net/library/node:20-alpine
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm
 
 COPY package.json pnpm-lock.yaml* ./
 # 仅安装生产环境依赖
