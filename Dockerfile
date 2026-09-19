@@ -1,5 +1,5 @@
 # 1. 编译阶段
-FROM node:20-alpine AS builder
+FROM dockerproxy.net/library/node:20-alpine AS builder
 WORKDIR /app
 
 # 安装 pnpm
@@ -15,7 +15,7 @@ RUN npx prisma generate
 RUN pnpm run build
 
 # 2. 运行阶段
-FROM node:20-alpine
+FROM dockerproxy.net/library/node:20-alpine
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
