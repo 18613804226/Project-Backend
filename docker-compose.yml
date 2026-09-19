@@ -1,8 +1,7 @@
-version: '3.8'
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: ccr.ccs.tencentyun.com/library/postgres:15-alpine
     container_name: dietai-postgres
     restart: always
     environment:
