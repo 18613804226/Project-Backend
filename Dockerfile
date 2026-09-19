@@ -2,8 +2,12 @@
 FROM dockerproxy.net/library/node:20-alpine AS builder
 WORKDIR /app
 
-# 直接通过 npm 全局安装稳定版的 pnpm
-RUN npm install -g pnpm
+# 设置 npm 国内镜像源，并全局安装 pnpm
+RUN npm config set registry https://registry.npmmirror.com \
+    && npm install -g pnpm
+
+# 顺便给 pnpm 也配置一下国内镜像源（防止后面 pnpm install 卡住）
+RUN pnpm config set registry https://registry.npmmirror.com
 
 # 复制依赖配置文件
 COPY package.json pnpm-lock.yaml* ./
