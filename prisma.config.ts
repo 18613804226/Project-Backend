@@ -1,6 +1,10 @@
 // prisma.config.ts
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { defineConfig, env } from 'prisma/config';
+
+// 显式指定加载 .env.development，再加载 .env 兜底
+dotenv.config({ path: '.env.development' });
+dotenv.config();
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',

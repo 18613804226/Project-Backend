@@ -1,15 +1,29 @@
 // prisma/seed.ts
-import 'dotenv/config'; // 确保能读取 .env 中的 DATABASE_URL
-import { PrismaClient } from '@prisma/client'; // 如果你设置了 output，请改成对应路径
+import dotenv from 'dotenv';
+
+// 1. 显式加载 .env.development（优先）和 .env（兜底）
+dotenv.config({ path: '.env.development' });
+dotenv.config();
+
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+
+// 2. 指向你生成的真实客户端路径
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+
+// 3. 校验连接串，防止防错
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error(
+    '❌ 错误: DATABASE_URL 未定义，请检查 .env.development 配置文件！',
+  );
+  process.exit(1);
+}
 
 // 创建 PostgreSQL 连接池
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Render 的 Postgres 有时需要显式启用 SSL（生产环境推荐）
-  // 如果本地测试报 SSL 错误，可以注释掉下面这行
+  connectionString,
   ssl:
     process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
@@ -19,7 +33,7 @@ const pool = new Pool({
 // 创建 Prisma Adapter
 const adapter = new PrismaPg(pool);
 
-// 传入 adapter 实例化 PrismaClient（关键！）
+// 传入 adapter 实例化 PrismaClient
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
@@ -54,6 +68,6 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-    // 重要：关闭连接池，避免进程挂起
+    // 关闭连接池，避免进程挂起
     await pool.end();
   });

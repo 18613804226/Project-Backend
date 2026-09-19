@@ -81,9 +81,9 @@ export class AiController {
  }`;
 
       const res = await axios.post(
-        'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+        'https://ws-mem1mn33k3vq7jv7.cn-hongkong.maas.aliyuncs.com/compatible-mode/v1',
         {
-          model: 'qwen-plus', // 更智能的模型
+          model: 'qwen3.8-max-0902', // 更智能的模型
           input: {
             messages: [
               {
