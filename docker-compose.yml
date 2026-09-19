@@ -7,8 +7,8 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_secure_password  # 记得改成你自己的密码
-      POSTGRES_DB: training_db
+      POSTGRES_PASSWORD: qazwsx123
+      POSTGRES_DB: training
     ports:
       - "5432:5432"
     volumes:
@@ -16,7 +16,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 350M  # 限制最大占用内存不超过 350MB
+          memory: 350M
 
   backend:
     build:
@@ -24,9 +24,11 @@ services:
       dockerfile: Dockerfile
     container_name: dietai-backend
     restart: always
+    env_file:
+      - .env.production
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:your_secure_password@postgres:5432/training_db?schema=public
+      - DATABASE_URL=postgresql://postgres:qazwsx123@postgres:5432/training?schema=public
       - PORT=3000
     ports:
       - "3000:3000"
@@ -35,7 +37,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 350M  # 限制 NestJS 最大占用内存不超过 350MB
+          memory: 350M
 
 volumes:
   pgdata:
