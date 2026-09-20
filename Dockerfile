@@ -22,4 +22,4 @@ RUN pnpm run build
 EXPOSE 3000
 
 # 直接用 node 运行编译后的产物
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
