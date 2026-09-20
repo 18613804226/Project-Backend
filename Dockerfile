@@ -10,32 +10,24 @@ RUN npm config set registry https://registry.npmmirror.com \
 
 RUN pnpm config set registry https://registry.npmmirror.com
 
-# 【关键调整】先把所有源码（包含 prisma 文件夹和 package.json）一次性复制进来
+# 复制所有源码
 COPY . .
 
-# 安装所有依赖（此时因为 prisma 文件已经存在，postinstall 的 prisma generate 会自动成功执行）
+# 安装依赖并自动触发 prisma generate
 RUN pnpm install --frozen-lockfile=false
 
 # 编译打包
 RUN pnpm run build
 
-# 2. 运行阶段
+# 2. 运行阶段（直接继承编译好的成果，不再重复安装）
 FROM dockerproxy.net/library/node:20-alpine
 WORKDIR /app
 
-RUN npm config set registry https://registry.npmmirror.com \
-    && npm install -g pnpm
-
-RUN pnpm config set registry https://registry.npmmirror.com
-
-COPY package.json pnpm-lock.yaml* ./
-# 仅安装生产环境依赖，并跳过脚本
-RUN pnpm install --prod --ignore-scripts
-
-# 复制编译后的产物
+# 复制编译阶段生成好的产物和依赖
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
