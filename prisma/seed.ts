@@ -24,10 +24,7 @@ if (!connectionString) {
 // 创建 PostgreSQL 连接池
 const pool = new Pool({
   connectionString,
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: false,
 });
 
 // 创建 Prisma Adapter
