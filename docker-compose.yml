@@ -1,0 +1,42 @@
+
+services:
+  postgres:
+    image: dockerproxy.net/library/postgres:15-alpine
+    container_name: dietai-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: qazwsx123
+      POSTGRES_DB: training
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dietai-backend
+    restart: always
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:qazwsx123@postgres:5432/training?schema=public
+      - PORT=3000
+    ports:
+      - "4000:3000"
+    depends_on:
+      - postgres
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+volumes:
+  pgdata:

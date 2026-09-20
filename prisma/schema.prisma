@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int                @id @default(autoincrement())
+  username          String             @unique
+  email             String?            @unique
+  password          String?
+  nickname          String?
+  role              String             @default("STUDENT")
+  avatar            String?
+  createdAt         DateTime           @default(now())
+  name              String?
+  status            String             @default("ACTIVE")
+  courses           Course[]
+  certificates      Certificate[]
+  visitLogs         VisitLog[]
+  studyLogs         StudyLog[]
+  resourceDownloads ResourceDownload[]
+  examResults       ExamResult[]
+  activityLogs      ActivityLog[]
+  lessonProgresses  LessonProgress[]
+  notifications     Notification[]
+}
+
+model Course {
+  id            Int            @id @default(autoincrement())
+  title         String         @unique
+  description   String?
+  cover         String?
+  teacherId     Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  teacher       User?          @relation(fields: [teacherId], references: [id])
+  category      String?
+  certificates  Certificate[]
+  studyLogs     StudyLog[]
+  examTemplates ExamTemplate[]
+  lessons       Lesson[]
+}
+
+model PublishedExam {
+  id          Int            @id @default(autoincrement())
+  title       String
+  subject     String
+  difficulty  String
+  createdAt   DateTime       @default(now())
+  createdBy   String
+  status      String         @default("active")
+  isCurrent   Boolean        @default(false) //  mark current exam
+  templateId  Int?
+  template    ExamTemplate?  @relation(fields: [templateId], references: [id])
+  questions   ExamQuestion[]
+  duration    Int            @default(0)
+  examResults ExamResult[]
+
+  @@index([isCurrent]) // ✅ faster lookup for current exam
+}
+
+model ExamQuestion {
+  id              Int            @id @default(autoincrement())
+  question        String
+  answer          String
+  explanation     String?
+  createdAt       DateTime       @default(now())
+  subject         String
+  difficulty      String
+  questionType    String
+  options         Json
+  score           Int            @default(10)
+  publishedExamId Int?
+  publishedExam   PublishedExam? @relation(fields: [publishedExamId], references: [id])
+  isCurrentExam   Boolean        @default(false)
+  optionsHash     String?
+
+  @@index([publishedExamId])
+}
+
+model ExamTemplate {
+  id           Int             @id @default(autoincrement())
+  name         String          @unique
+  duration     Int
+  sections     ExamSection[]
+  courseId     Int?
+  exams        PublishedExam[] // optional back-reference
+  course       Course?         @relation(fields: [courseId], references: [id])
+  passingScore Int?            @default(60)
+}
+
+model ExamSection {
+  id           Int          @id @default(autoincrement())
+  questionType String
+  count        Int
+  score        Int
+  templateId   Int
+  template     ExamTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+}
+
+model Certificate {
+  id         Int      @id @default(autoincrement())
+  name       String?
+  username   String
+  courseId   Int?
+  courseName String?
+  issuedAt   DateTime @default(now())
+  status     String?  @default("ACTIVE") // ACTIVE, EXPIRED
+  userId     Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  templateId Int
+  // 关联关系
+  user       User?    @relation(fields: [userId], references: [id])
+  course     Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+}
+
+model VisitLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  ip         String?
+  userAgent  String?
+  path       String // 如 /api/courses, /dashboard
+  method     String // GET, POST...
+  statusCode Int // 200, 404...
+  duration   Int?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([path, createdAt])
+}
+
+model StudyLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  courseId  Int?
+  lessonId  Int?
+  action    String // "watch_video", "complete_lesson", "start_exam", "download_resource"
+  metadata  Json? //{ videoId: 123, progress: 80 }
+  duration  Int?
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id])
+  course Course? @relation(fields: [courseId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+model ResourceDownload {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  resourceId   Int
+  resourceType String // "course_material", "certificate_pdf", "exam_template"
+  fileName     String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([resourceType, createdAt])
+}
+
+// prisma/schema.prisma
+
+model PageView {
+  id       Int      @id @default(autoincrement())
+  ip       String?
+  userId   Int?
+  path     String
+  viewedAt DateTime @default(now())
+
+  @@index([viewedAt])
+  @@index([ip])
+  @@index([userId])
+}
+
+model ExamResult {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  examId    Int
+  score     Int
+  passed    Boolean
+  createdAt DateTime @default(now())
+
+  user User          @relation(fields: [userId], references: [id])
+  exam PublishedExam @relation(fields: [examId], references: [id])
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  actionType String
+  targetId   Int?
+  targetType String?
+  content    String
+  isPublic   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Lesson {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  courseId    Int
+  moduleId    Int?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  type        String   @default("text")
+  content     Json?    @default("[]")
+  videoUrl    String?
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  // module Module? @relation(fields: [moduleId], references: [id]) 
+
+  progresses LessonProgress[]
+
+  @@index([courseId])
+  @@index([courseId, order], name: "Lesson_courseId_order_idx")
+}
+
+model LessonProgress {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  lessonId    Int
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  content   String
+  type      String // e.g., "CERTIFICATE_ISSUED", "EXAM_PASSED"
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
